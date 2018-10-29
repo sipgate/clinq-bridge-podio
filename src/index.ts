@@ -35,7 +35,7 @@ const getAccessToken = async (refreshToken: string) => {
   const response = await axios.post(API_URL_TOKEN, query);
   const { access_token: accessToken } = response.data;
   return accessToken;
-}
+};
 
 const getContacts = async (accessToken: string) => {
   const response = await axios.get<PodioContact[]>(API_URL_CONTACT, {
@@ -43,8 +43,10 @@ const getContacts = async (accessToken: string) => {
       Authorization: `Bearer ${accessToken}`
     }
   });
-  return response.data.map(convertContact);
-}
+  return response.data
+    .filter(entry => entry.phone.length > 0)
+    .map(convertContact);
+};
 
 class PodioAdapter implements Adapter {
   public async getContacts(config: Config): Promise<Contact[]> {
