@@ -25,32 +25,43 @@ const convertContact = (contact: PodioContact): Contact => ({
   }))
 });
 
+const getAccessToken = async (refreshToken: string) => {
+  const query = qs.stringify({
+    grant_type: "refresh_token",
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken
+  });
+  const response = await axios.post(API_URL_TOKEN, query);
+  const { access_token: accessToken } = response.data;
+  return accessToken;
+}
+
+const getContacts = async (accessToken: string) => {
+  const response = await axios.get<PodioContact[]>(API_URL_CONTACT, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  return response.data.map(convertContact);
+}
+
 class PodioAdapter implements Adapter {
   public async getContacts(config: Config): Promise<Contact[]> {
     const { apiKey } = config;
-    const [, refreshToken] = apiKey.split(":");
-    const query = qs.stringify({
-      grant_type: "refresh_token",
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken
-    });
-    const authResponse = await axios.post(API_URL_TOKEN, query);
-    const { access_token: accessToken } = authResponse.data;
-    const contactsResponse = await axios.get<PodioContact[]>(API_URL_CONTACT, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-    return contactsResponse.data.map(convertContact);
+    const [accessToken, refreshToken] = apiKey.split(":");
+    try {
+      return await getContacts(accessToken);
+    } catch {
+      const freshAccessToken = await getAccessToken(refreshToken);
+      return await getContacts(freshAccessToken);
+    }
   }
 
   public async getOAuth2RedirectUrl() {
     const query = qs.stringify({
       client_id: clientId,
-      redirect_uri: redirectUrl,
-      // TODO: Contacts scope
-      scope: "global:all"
+      redirect_uri: redirectUrl
     });
     return `${API_URL_AUTHORIZE}?${query}`;
   }
@@ -64,10 +75,8 @@ class PodioAdapter implements Adapter {
       client_secret: clientSecret,
       code
     });
-    console.log(query);
     const response = await axios.post(API_URL_TOKEN, query);
     const { access_token, refresh_token } = response.data;
-    console.log(response.data);
     return {
       apiKey: `${access_token}:${refresh_token}`,
       apiUrl: ""
