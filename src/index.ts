@@ -11,11 +11,13 @@ const API_URL_TOKEN = "https://podio.com/oauth/token";
 const API_URL_CONTACT = "https://api.podio.com/contact";
 const API_URL_AUTHORIZE = "https://podio.com/oauth/authorize";
 
+const hasValue = (field: string[] | undefined): boolean =>
+  Array.isArray(field) && field.length > 0;
+
 const convertContact = (contact: PodioContact): Contact => ({
   id: String(contact.profile_id),
   name: contact.name,
-  email:
-    Array.isArray(contact.mail) && contact.mail[0] ? contact.mail[0] : null,
+  email: hasValue(contact.mail) ? contact.mail[0] : null,
   company: null,
   contactUrl: contact.link,
   avatarUrl: null,
@@ -47,7 +49,7 @@ const getContacts = async (accessToken: string) => {
     return [];
   }
   return response.data
-    .filter(entry => entry.phone && entry.phone.length > 0)
+    .filter(entry => hasValue(entry.phone))
     .map(convertContact);
 };
 
