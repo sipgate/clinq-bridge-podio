@@ -43,8 +43,11 @@ const getContacts = async (accessToken: string) => {
       Authorization: `Bearer ${accessToken}`
     }
   });
+  if (!Array.isArray(response.data)) {
+    return [];
+  }
   return response.data
-    .filter(entry => entry.phone.length > 0)
+    .filter(entry => entry.phone && entry.phone.length > 0)
     .map(convertContact);
 };
 
