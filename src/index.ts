@@ -17,8 +17,10 @@ const hasValue = (field: string[] | undefined): boolean =>
 const convertContact = (contact: PodioContact): Contact => ({
   id: String(contact.profile_id),
   name: contact.name,
+  firstName: null,
+  lastName: null,
   email: hasValue(contact.mail) ? contact.mail[0] : null,
-  company: null,
+  organization: null,
   contactUrl: contact.link,
   avatarUrl: null,
   phoneNumbers: contact.phone.map(phoneNumber => ({
