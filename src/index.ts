@@ -1,4 +1,10 @@
-import { Adapter, Config, Contact, start } from "@clinq/bridge";
+import {
+  Adapter,
+  Config,
+  Contact,
+  start,
+  PhoneNumberLabel
+} from "@clinq/bridge";
 import axios from "axios";
 import { Request } from "express";
 import * as qs from "querystring";
@@ -24,7 +30,7 @@ const convertContact = (contact: PodioContact): Contact => ({
   contactUrl: contact.link,
   avatarUrl: null,
   phoneNumbers: contact.phone.map(phoneNumber => ({
-    label: null,
+    label: PhoneNumberLabel.WORK,
     phoneNumber
   }))
 });
@@ -42,17 +48,19 @@ const getAccessToken = async (refreshToken: string) => {
 };
 
 const getContacts = async (accessToken: string) => {
-  const response = await axios.get<PodioContact[]>(API_URL_CONTACT, {
+  const contactResponse = await axios.get<PodioContact[]>(API_URL_CONTACT, {
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
   });
-  if (!Array.isArray(response.data)) {
+  if (!Array.isArray(contactResponse.data)) {
     return [];
   }
-  return response.data
+
+  const contacts = contactResponse.data
     .filter(entry => hasValue(entry.phone))
-    .map(convertContact);
+    .map(contact => convertContact(contact));
+  return contacts;
 };
 
 class PodioAdapter implements Adapter {
