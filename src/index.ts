@@ -2,8 +2,8 @@ import {
   Adapter,
   Config,
   Contact,
-  start,
-  PhoneNumberLabel
+  PhoneNumberLabel,
+  start
 } from "@clinq/bridge";
 import axios from "axios";
 import { Request } from "express";
@@ -83,7 +83,9 @@ class PodioAdapter implements Adapter {
     return `${API_URL_AUTHORIZE}?${query}`;
   }
 
-  public async handleOAuth2Callback(request: Request): Promise<Config> {
+  public async handleOAuth2Callback(
+    request: Request
+  ): Promise<{ apiKey: string; apiUrl: string }> {
     const { code } = request.query;
     const query = qs.stringify({
       grant_type: "authorization_code",
