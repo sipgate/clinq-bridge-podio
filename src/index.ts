@@ -3,11 +3,12 @@ import {
   Config,
   Contact,
   PhoneNumberLabel,
-  start
+  ServerError,
+  start,
 } from "@clinq/bridge";
 import axios from "axios";
 import { Request } from "express";
-import * as qs from "querystring";
+import qs from "querystring";
 import parseEnvironment from "./parse-environment";
 import { PodioContact } from "./podio-contact.model";
 
@@ -29,10 +30,10 @@ const convertContact = (contact: PodioContact): Contact => ({
   organization: null,
   contactUrl: contact.link,
   avatarUrl: null,
-  phoneNumbers: contact.phone.map(phoneNumber => ({
+  phoneNumbers: contact.phone.map((phoneNumber) => ({
     label: PhoneNumberLabel.WORK,
-    phoneNumber
-  }))
+    phoneNumber,
+  })),
 });
 
 const getAccessToken = async (refreshToken: string) => {
@@ -40,7 +41,7 @@ const getAccessToken = async (refreshToken: string) => {
     grant_type: "refresh_token",
     client_id: clientId,
     client_secret: clientSecret,
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
   const response = await axios.post(API_URL_TOKEN, query);
   const { access_token: accessToken } = response.data;
@@ -50,16 +51,16 @@ const getAccessToken = async (refreshToken: string) => {
 const getContacts = async (accessToken: string) => {
   const contactResponse = await axios.get<PodioContact[]>(API_URL_CONTACT, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
   if (!Array.isArray(contactResponse.data)) {
     return [];
   }
 
   const contacts = contactResponse.data
-    .filter(entry => hasValue(entry.phone))
-    .map(contact => convertContact(contact));
+    .filter((entry) => hasValue(entry.phone))
+    .map((contact) => convertContact(contact));
   return contacts;
 };
 
@@ -78,7 +79,7 @@ class PodioAdapter implements Adapter {
   public async getOAuth2RedirectUrl() {
     const query = qs.stringify({
       client_id: clientId,
-      redirect_uri: redirectUrl
+      redirect_uri: redirectUrl,
     });
     return `${API_URL_AUTHORIZE}?${query}`;
   }
@@ -87,18 +88,23 @@ class PodioAdapter implements Adapter {
     request: Request
   ): Promise<{ apiKey: string; apiUrl: string }> {
     const { code } = request.query;
+
+    if (typeof code !== "string") {
+      throw new ServerError(400, "Invalid code");
+    }
+
     const query = qs.stringify({
       grant_type: "authorization_code",
       client_id: clientId,
       redirect_uri: redirectUrl,
       client_secret: clientSecret,
-      code
+      code,
     });
     const response = await axios.post(API_URL_TOKEN, query);
     const { access_token, refresh_token } = response.data;
     return {
       apiKey: `${access_token}:${refresh_token}`,
-      apiUrl: ""
+      apiUrl: "",
     };
   }
 }
