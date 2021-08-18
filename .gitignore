@@ -1,7 +1,6 @@
 # Node files
 node_modules
 npm-debug.log
-package-lock.json
 yarn-error.log
 
 # IDE files
@@ -13,3 +12,6 @@ yarn-error.log
 dist/
 
 env.sh
+
+k8s/secrets.yml
+k8s/prod.yml
