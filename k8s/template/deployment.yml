@@ -44,7 +44,7 @@ spec:
               port: 8080
           env:
             - name: REDIS_URL
-              value: rediss://10.102.0.11:6378
+              value: redis://clinq-cache-redis-master.redis.svc.cluster.local
             - name: OAUTH_IDENTIFIER
               value: PODIO
             - name: PODIO_CLIENT_ID
@@ -55,4 +55,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: $APP
-                  key: podio-client-secret
+                  key: podioClientSecret
